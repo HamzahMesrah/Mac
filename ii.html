@@ -1,0 +1,2351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jetpack Compose Explorer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4285F4;
+            --primary-dark: #3367D6;
+            --secondary: #34A853;
+            --accent: #EA4335;
+            --yellow: #FBBC05;
+            --background: #121212;
+            --surface: #1E1E1E;
+            --text-primary: #FFFFFF;
+            --text-secondary: #B0B0B0;
+            --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--background);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+            overflow: hidden;
+            padding: 2rem 0;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, var(--primary), var(--secondary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: gradientShift 8s ease infinite;
+            background-size: 300% 300%;
+            position: relative;
+            z-index: 2;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0.3;
+        }
+
+        .particle {
+            position: absolute;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: float 15s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+        }
+
+        .search-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 3rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .search-input {
+            width: 100%;
+            max-width: 600px;
+            padding: 1rem 1.5rem;
+            border-radius: 50px;
+            border: none;
+            background: var(--surface);
+            color: var(--text-primary);
+            font-size: 1rem;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .search-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .libraries-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .library-card {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .library-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            border-color: var(--primary);
+        }
+
+        .library-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(66, 133, 244, 0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+
+        .library-card:hover::before {
+            transform: translateX(100%);
+        }
+
+        .library-name {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+        }
+
+        .library-name i {
+            margin-right: 0.8rem;
+            font-size: 1.8rem;
+        }
+
+        .library-description {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .library-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+        }
+
+        .stat i {
+            margin-right: 0.3rem;
+        }
+
+        .library-page {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--background);
+            z-index: 100;
+            padding: 2rem;
+            overflow-y: auto;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .library-page.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .back-button {
+            background: var(--surface);
+            border: none;
+            color: var(--text-primary);
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+        }
+
+        .back-button:hover {
+            background: var(--primary);
+            transform: translateX(-5px);
+        }
+
+        .back-button i {
+            margin-right: 0.5rem;
+        }
+
+        .library-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .library-title {
+            font-size: 2.5rem;
+            color: var(--primary);
+        }
+
+        .functions-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .function-card {
+            background: var(--surface);
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            border-left: 4px solid var(--primary);
+        }
+
+        .function-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .function-name {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .function-description {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .function-details {
+            margin-top: 1rem;
+        }
+
+        .detail-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .modifiers-list, .inner-functions-list, .parameters-list, .properties-list, .classes-list, .annotations-list, .events-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .modifier, .inner-function, .parameter, .property, .class-item, .annotation, .event {
+            background: rgba(66, 133, 244, 0.1);
+            color: var(--primary);
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .parameter-type {
+            color: var(--secondary);
+            margin-left: 0.3rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+
+        .parameter-default {
+            color: var(--accent);
+            margin-left: 0.3rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+
+        .inner-function {
+            background: rgba(52, 168, 83, 0.1);
+            color: var(--secondary);
+        }
+
+        .parameter {
+            background: rgba(234, 67, 53, 0.1);
+            color: var(--accent);
+        }
+
+        .property {
+            background: rgba(251, 188, 5, 0.1);
+            color: var(--yellow);
+        }
+
+        .class-item {
+            background: rgba(66, 133, 244, 0.2);
+            color: var(--primary);
+        }
+
+        .annotation {
+            background: rgba(234, 67, 53, 0.2);
+            color: var(--accent);
+        }
+
+        .event {
+            background: rgba(52, 168, 83, 0.2);
+            color: var(--secondary);
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(66, 133, 244, 0.2);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .parameters-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+
+        .parameters-table th {
+            text-align: left;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .parameters-table td {
+            padding: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            vertical-align: top;
+        }
+
+        .parameters-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .parameter-name {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent);
+        }
+
+        .parameter-type-cell {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--secondary);
+        }
+
+        .parameter-default-cell {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .parameter-description {
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .example-section {
+            margin-top: 2rem;
+            background: rgba(66, 133, 244, 0.05);
+            border-radius: 8px;
+            padding: 1.5rem;
+            border-left: 4px solid var(--primary);
+        }
+
+        .example-title {
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .example-title i {
+            margin-right: 0.5rem;
+        }
+
+        .example-code {
+            background: var(--surface);
+            padding: 1rem;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: var(--primary);
+            margin: 2rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .libraries-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .functions-list {
+                grid-template-columns: 1fr;
+            }
+
+            .parameters-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+
+        /* Floating action button */
+        .fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(66, 133, 244, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 99;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(66, 133, 244, 0.4);
+        }
+
+        .fab i {
+            color: white;
+            font-size: 1.5rem;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="particles" id="particles"></div>
+            <h1>Jetpack Compose Explorer</h1>
+            <p class="subtitle">Browse all Jetpack Compose libraries with detailed information about functions, parameters, modifiers, and more.</p>
+        </header>
+
+        <div class="search-container">
+            <input type="text" class="search-input" placeholder="Search libraries, functions, parameters..." id="searchInput">
+        </div>
+
+        <div class="libraries-grid" id="librariesGrid">
+            <!-- Libraries will be loaded here -->
+            <div class="loading">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Library pages will be dynamically created here -->
+    <div id="libraryPagesContainer"></div>
+
+    <!-- Floating action button -->
+    <div class="fab" id="scrollToTop">
+        <i class="fas fa-arrow-up"></i>
+    </div>
+
+    <script>
+        // Complete Jetpack Compose libraries data
+        const composeData = {
+            "Foundation": {
+                description: "Basic building blocks for Compose UI, with core components and modifiers",
+                icon: "fa-cube",
+                functions: [
+                    {
+                        name: "Box",
+                        description: "A layout composable that allows stacking of children on top of each other",
+                        modifiers: ["modifier", "contentAlignment", "propagateMinConstraints"],
+                        innerFunctions: ["BoxScope"],
+                        parameters: [
+                            {
+                                name: "modifier",
+                                type: "Modifier",
+                                defaultValue: "Modifier",
+                                description: "The modifier to be applied to the Box"
+                            },
+                            {
+                                name: "contentAlignment",
+                                type: "Alignment",
+                                defaultValue: "Alignment.TopStart",
+                                description: "The default alignment inside the Box"
+                            },
+                            {
+                                name: "propagateMinConstraints",
+                                type: "Boolean",
+                                defaultValue: "false",
+                                description: "Whether the min constraints should be passed to content"
+                            },
+                            {
+                                name: "content",
+                                type: "@Composable BoxScope.() -> Unit",
+                                defaultValue: "",
+                                description: "The content of the Box"
+                            }
+                        ],
+                        classes: ["BoxScope"],
+                        examples: [
+                            {
+                                title: "Basic Box Usage",
+                                code: `@Composable
+fun BoxExample() {
+    Box(
+        modifier = Modifier
+            .size(200.dp)
+            .background(Color.Blue),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("Centered in Box", color = Color.White)
+    }
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "Column",
+                        description: "Places its children in a vertical sequence",
+                        modifiers: ["modifier", "verticalArrangement", "horizontalAlignment"],
+                        innerFunctions: ["ColumnScope"],
+                        parameters: [
+                            {
+                                name: "modifier",
+                                type: "Modifier",
+                                defaultValue: "Modifier",
+                                description: "The modifier to be applied to the Column"
+                            },
+                            {
+                                name: "verticalArrangement",
+                                type: "Arrangement.Vertical",
+                                defaultValue: "Arrangement.Top",
+                                description: "The vertical arrangement of the layout's children"
+                            },
+                            {
+                                name: "horizontalAlignment",
+                                type: "Alignment.Horizontal",
+                                defaultValue: "Alignment.Start",
+                                description: "The horizontal alignment of the layout's children"
+                            },
+                            {
+                                name: "content",
+                                type: "@Composable ColumnScope.() -> Unit",
+                                defaultValue: "",
+                                description: "The content of the Column"
+                            }
+                        ],
+                        classes: ["ColumnScope"],
+                        examples: [
+                            {
+                                title: "Basic Column",
+                                code: `@Composable
+fun ColumnExample() {
+    Column(
+        modifier = Modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text("First item")
+        Text("Second item")
+        Text("Third item")
+    }
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "Row",
+                        description: "Places its children in a horizontal sequence",
+                        modifiers: ["modifier", "horizontalArrangement", "verticalAlignment"],
+                        innerFunctions: ["RowScope"],
+                        parameters: [
+                            {
+                                name: "modifier",
+                                type: "Modifier",
+                                defaultValue: "Modifier",
+                                description: "The modifier to be applied to the Row"
+                            },
+                            {
+                                name: "horizontalArrangement",
+                                type: "Arrangement.Horizontal",
+                                defaultValue: "Arrangement.Start",
+                                description: "The horizontal arrangement of the layout's children"
+                            },
+                            {
+                                name: "verticalAlignment",
+                                type: "Alignment.Vertical",
+                                defaultValue: "Alignment.Top",
+                                description: "The vertical alignment of the layout's children"
+                            },
+                            {
+                                name: "content",
+                                type: "@Composable RowScope.() -> Unit",
+                                defaultValue: "",
+                                description: "The content of the Row"
+                            }
+                        ],
+                        classes: ["RowScope"],
+                        examples: [
+                            {
+                                title: "Basic Row",
+                                code: `@Composable
+fun RowExample() {
+    Row(
+        modifier = Modifier.padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text("First")
+        Text("Second")
+        Text("Third")
+    }
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "Text",
+                        description: "Displays text and provides semantics",
+                        modifiers: ["modifier", "color", "fontSize", "fontWeight", "textAlign"],
+                        innerFunctions: [],
+                        parameters: [
+                            {
+                                name: "text",
+                                type: "String",
+                                defaultValue: "",
+                                description: "The text to be displayed"
+                            },
+                            {
+                                name: "modifier",
+                                type: "Modifier",
+                                defaultValue: "Modifier",
+                                description: "The modifier to be applied to the Text"
+                            },
+                            {
+                                name: "color",
+                                type: "Color",
+                                defaultValue: "Color.Unspecified",
+                                description: "The color of the text"
+                            },
+                            {
+                                name: "fontSize",
+                                type: "TextUnit",
+                                defaultValue: "TextUnit.Unspecified",
+                                description: "The size of the text"
+                            },
+                            {
+                                name: "fontWeight",
+                                type: "FontWeight?",
+                                defaultValue: "null",
+                                description: "The thickness of the glyphs in the text"
+                            },
+                            {
+                                name: "textAlign",
+                                type: "TextAlign?",
+                                defaultValue: "null",
+                                description: "The alignment of the text within its container"
+                            }
+                        ],
+                        examples: [
+                            {
+                                title: "Styled Text",
+                                code: `@Composable
+fun TextExample() {
+    Text(
+        text = "Hello Compose!",
+        modifier = Modifier.padding(16.dp),
+        color = Color.Blue,
+        fontSize = 24.sp,
+        fontWeight = FontWeight.Bold
+    )
+}`
+                            }
+                        ]
+                    }
+                ],
+                classes: ["BoxScope", "ColumnScope", "RowScope"],
+                properties: ["Alignment", "Arrangement"],
+                annotations: ["@Composable", "@Preview"]
+            },
+            "Material": {
+                description: "Material Design components and theming for Compose applications",
+                icon: "fa-palette",
+                functions: [
+                    {
+                        name: "Button",
+                        description: "A clickable button with Material Design styling",
+                        modifiers: ["modifier", "onClick", "enabled", "elevation"],
+                        innerFunctions: ["ButtonColors", "ButtonElevation"],
+                        parameters: [
+                            {
+                                name: "onClick",
+                                type: "() -> Unit",
+                                defaultValue: "",
+                                description: "The callback to be invoked when the button is clicked"
+                            },
+                            {
+                                name: "modifier",
+                                type: "Modifier",
+                                defaultValue: "Modifier",
+                                description: "The modifier to be applied to the Button"
+                            },
+                            {
+                                name: "enabled",
+                                type: "Boolean",
+                                defaultValue: "true",
+                                description: "Whether the button is enabled and can be clicked"
+                            },
+                            {
+                                name: "elevation",
+                                type: "ButtonElevation?",
+                                defaultValue: "null",
+                                description: "The elevation of the button in its different states"
+                            },
+                            {
+                                name: "shape",
+                                type: "Shape",
+                                defaultValue: "MaterialTheme.shapes.medium",
+                                description: "The shape of the button"
+                            },
+                            {
+                                name: "content",
+                                type: "@Composable RowScope.() -> Unit",
+                                defaultValue: "",
+                                description: "The content of the Button"
+                            }
+                        ],
+                        classes: ["ButtonColors", "ButtonElevation"],
+                        examples: [
+                            {
+                                title: "Basic Button",
+                                code: `@Composable
+fun ButtonExample() {
+    Button(
+        onClick = { /* Handle click */ },
+        modifier = Modifier.padding(16.dp)
+    ) {
+        Text("Click me")
+    }
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "TextField",
+                        description: "A text field with Material Design styling",
+                        modifiers: ["modifier", "value", "onValueChange", "label", "placeholder"],
+                        innerFunctions: ["TextFieldColors", "TextFieldDefaults"],
+                        parameters: [
+                            {
+                                name: "value",
+                                type: "String",
+                                defaultValue: "",
+                                description: "The input text to be shown in the text field"
+                            },
+                            {
+                                name: "onValueChange",
+                                type: "(String) -> Unit",
+                                defaultValue: "",
+                                description: "The callback that is triggered when the input service updates the text"
+                            },
+                            {
+                                name: "modifier",
+                                type: "Modifier",
+                                defaultValue: "Modifier",
+                                description: "The modifier to be applied to the TextField"
+                            },
+                            {
+                                name: "label",
+                                type: "@Composable (() -> Unit)?",
+                                defaultValue: "null",
+                                description: "The optional label to be displayed inside the TextField"
+                            },
+                            {
+                                name: "placeholder",
+                                type: "@Composable (() -> Unit)?",
+                                defaultValue: "null",
+                                description: "The optional placeholder to be displayed when the TextField is empty"
+                            },
+                            {
+                                name: "singleLine",
+                                type: "Boolean",
+                                defaultValue: "false",
+                                description: "Whether the text field is a single line text field"
+                            }
+                        ],
+                        classes: ["TextFieldColors", "TextFieldDefaults"],
+                        examples: [
+                            {
+                                title: "Basic TextField",
+                                code: `@Composable
+fun TextFieldExample() {
+    var text by remember { mutableStateOf("") }
+    
+    TextField(
+        value = text,
+        onValueChange = { text = it },
+        label = { Text("Enter text") },
+        modifier = Modifier.fillMaxWidth()
+    )
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "Card",
+                        description: "A Material Design card with rounded corners and elevation",
+                        modifiers: ["modifier", "shape", "elevation", "backgroundColor"],
+                        innerFunctions: [],
+                        parameters: [
+                            {
+                                name: "modifier",
+                                type: "Modifier",
+                                defaultValue: "Modifier",
+                                description: "The modifier to be applied to the Card"
+                            },
+                            {
+                                name: "shape",
+                                type: "Shape",
+                                defaultValue: "MaterialTheme.shapes.medium",
+                                description: "The shape of the card"
+                            },
+                            {
+                                name: "backgroundColor",
+                                type: "Color",
+                                defaultValue: "MaterialTheme.colors.surface",
+                                description: "The background color of the card"
+                            },
+                            {
+                                name: "content",
+                                type: "@Composable () -> Unit",
+                                defaultValue: "",
+                                description: "The content of the Card"
+                            }
+                        ],
+                        examples: [
+                            {
+                                title: "Basic Card",
+                                code: `@Composable
+fun CardExample() {
+    Card(
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxWidth(),
+        elevation = 4.dp
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Card Title", style = MaterialTheme.typography.h6)
+            Text("This is a card in Compose")
+        }
+    }
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "Scaffold",
+                        description: "Implements the basic Material Design visual layout structure",
+                        modifiers: ["modifier", "topBar", "bottomBar", "floatingActionButton"],
+                        innerFunctions: ["ScaffoldState", "rememberScaffoldState"],
+                        parameters: [
+                            {
+                                name: "modifier",
+                                type: "Modifier",
+                                defaultValue: "Modifier",
+                                description: "The modifier to be applied to the Scaffold"
+                            },
+                            {
+                                name: "scaffoldState",
+                                type: "ScaffoldState",
+                                defaultValue: "rememberScaffoldState()",
+                                description: "The state of the scaffold"
+                            },
+                            {
+                                name: "topBar",
+                                type: "@Composable () -> Unit",
+                                defaultValue: "null",
+                                description: "The top app bar of the screen"
+                            },
+                            {
+                                name: "bottomBar",
+                                type: "@Composable () -> Unit",
+                                defaultValue: "null",
+                                description: "The bottom bar of the screen"
+                            },
+                            {
+                                name: "floatingActionButton",
+                                type: "@Composable () -> Unit",
+                                defaultValue: "null",
+                                description: "The floating action button at the bottom of the screen"
+                            },
+                            {
+                                name: "content",
+                                type: "@Composable (PaddingValues) -> Unit",
+                                defaultValue: "",
+                                description: "The main content of the screen"
+                            }
+                        ],
+                        classes: ["ScaffoldState"],
+                        examples: [
+                            {
+                                title: "Basic Scaffold",
+                                code: `@Composable
+fun ScaffoldExample() {
+    Scaffold(
+        topBar = {
+            TopAppBar(title = { Text("My App") })
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { /* Handle click */ }) {
+                Icon(Icons.Default.Add, "Add")
+            }
+        }
+    ) { padding ->
+        // Screen content
+        Box(modifier = Modifier.padding(padding)) {
+            Text("Main content goes here")
+        }
+    }
+}`
+                            }
+                        ]
+                    }
+                ],
+                classes: ["ButtonColors", "ButtonElevation", "TextFieldColors", "TextFieldDefaults", "ScaffoldState"],
+                properties: ["MaterialTheme"],
+                annotations: ["@Composable", "@Preview"]
+            },
+            "Animation": {
+                description: "Animation APIs to bring motion to your Compose UI",
+                icon: "fa-magic",
+                functions: [
+                    {
+                        name: "AnimatedVisibility",
+                        description: "Automatically animates visibility when content appears or disappears",
+                        modifiers: ["modifier", "enter", "exit", "initiallyVisible"],
+                        innerFunctions: ["EnterTransition", "ExitTransition"],
+                        parameters: [
+                            {
+                                name: "visible",
+                                type: "Boolean",
+                                defaultValue: "",
+                                description: "Defines whether the content should be visible"
+                            },
+                            {
+                                name: "modifier",
+                                type: "Modifier",
+                                defaultValue: "Modifier",
+                                description: "The modifier to be applied to the layout"
+                            },
+                            {
+                                name: "enter",
+                                type: "EnterTransition",
+                                defaultValue: "fadeIn() + expandIn()",
+                                description: "The enter transition to use when the content appears"
+                            },
+                            {
+                                name: "exit",
+                                type: "ExitTransition",
+                                defaultValue: "fadeOut() + shrinkOut()",
+                                description: "The exit transition to use when the content disappears"
+                            },
+                            {
+                                name: "content",
+                                type: "@Composable () -> Unit",
+                                defaultValue: "",
+                                description: "The content to appear/disappear based on the visibility"
+                            }
+                        ],
+                        classes: ["EnterTransition", "ExitTransition"],
+                        examples: [
+                            {
+                                title: "Visibility Animation",
+                                code: `@Composable
+fun AnimatedVisibilityExample() {
+    var visible by remember { mutableStateOf(false) }
+    
+    Button(onClick = { visible = !visible }) {
+        Text("Toggle")
+    }
+    
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn() + expandVertically(),
+        exit = fadeOut() + shrinkVertically()
+    ) {
+        Text("Hello!", modifier = Modifier.padding(16.dp))
+    }
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "animateColorAsState",
+                        description: "Returns a State object whose value is animated between target values",
+                        modifiers: ["targetValue", "animationSpec"],
+                        innerFunctions: [],
+                        parameters: [
+                            {
+                                name: "targetValue",
+                                type: "Color",
+                                defaultValue: "",
+                                description: "The target value to animate to"
+                            },
+                            {
+                                name: "animationSpec",
+                                type: "AnimationSpec<Color>",
+                                defaultValue: "colorDefaultSpring",
+                                description: "The animation specification for the color animation"
+                            }
+                        ],
+                        examples: [
+                            {
+                                title: "Color Animation",
+                                code: `@Composable
+fun ColorAnimationExample() {
+    var isRed by remember { mutableStateOf(true) }
+    val color by animateColorAsState(
+        targetValue = if (isRed) Color.Red else Color.Blue,
+        animationSpec = tween(durationMillis = 1000)
+    )
+    
+    Box(
+        modifier = Modifier
+            .size(100.dp)
+            .background(color)
+            .clickable { isRed = !isRed }
+    )
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "Crossfade",
+                        description: "Animates between two layouts with a crossfade animation",
+                        modifiers: ["modifier", "targetState"],
+                        innerFunctions: [],
+                        parameters: [
+                            {
+                                name: "targetState",
+                                type: "T",
+                                defaultValue: "",
+                                description: "The target state that determines what content to show"
+                            },
+                            {
+                                name: "modifier",
+                                type: "Modifier",
+                                defaultValue: "Modifier",
+                                description: "The modifier to be applied to the layout"
+                            },
+                            {
+                                name: "content",
+                                type: "@Composable (T) -> Unit",
+                                defaultValue: "",
+                                description: "The content for each state"
+                            }
+                        ],
+                        examples: [
+                            {
+                                title: "Crossfade Animation",
+                                code: `@Composable
+fun CrossfadeExample() {
+    var currentPage by remember { mutableStateOf("A") }
+    
+    Column {
+        Button(onClick = { 
+            currentPage = if (currentPage == "A") "B" else "A" 
+        }) {
+            Text("Toggle Page")
+        }
+        
+        Crossfade(targetState = currentPage) { page ->
+            when (page) {
+                "A" -> Text("Page A")
+                "B" -> Text("Page B")
+            }
+        }
+    }
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "infiniteTransition",
+                        description: "Runs child animations infinitely",
+                        modifiers: [],
+                        innerFunctions: ["InfiniteTransition.animateColor", "InfiniteTransition.animateFloat"],
+                        parameters: [],
+                        classes: ["InfiniteTransition"],
+                        examples: [
+                            {
+                                title: "Infinite Animation",
+                                code: `@Composable
+fun InfiniteAnimationExample() {
+    val infiniteTransition = rememberInfiniteTransition()
+    val color by infiniteTransition.animateColor(
+        initialValue = Color.Red,
+        targetValue = Color.Blue,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+    
+    Box(
+        modifier = Modifier
+            .size(100.dp)
+            .background(color)
+    )
+}`
+                            }
+                        ]
+                    }
+                ],
+                classes: ["EnterTransition", "ExitTransition", "InfiniteTransition"],
+                properties: ["AnimationSpec", "Easing"],
+                annotations: ["@Composable"]
+            },
+            "Navigation": {
+                description: "Navigate between composables while maintaining state",
+                icon: "fa-route",
+                functions: [
+                    {
+                        name: "NavHost",
+                        description: "Provides a container for navigation between composables",
+                        modifiers: ["modifier", "navController", "startDestination"],
+                        innerFunctions: ["NavGraphBuilder"],
+                        parameters: [
+                            {
+                                name: "navController",
+                                type: "NavHostController",
+                                defaultValue: "",
+                                description: "The navController for this NavHost"
+                            },
+                            {
+                                name: "startDestination",
+                                type: "String",
+                                defaultValue: "",
+                                description: "The route for the start destination"
+                            },
+                            {
+                                name: "modifier",
+                                type: "Modifier",
+                                defaultValue: "Modifier",
+                                description: "The modifier to be applied to the NavHost"
+                            },
+                            {
+                                name: "builder",
+                                type: "NavGraphBuilder.() -> Unit",
+                                defaultValue: "",
+                                description: "The builder used to construct the navigation graph"
+                            }
+                        ],
+                        classes: ["NavHostController", "NavGraphBuilder"],
+                        examples: [
+                            {
+                                title: "Basic Navigation",
+                                code: `@Composable
+fun NavHostExample() {
+    val navController = rememberNavController()
+    
+    NavHost(
+        navController = navController,
+        startDestination = "home"
+    ) {
+        composable("home") { HomeScreen(navController) }
+        composable("details") { DetailsScreen(navController) }
+    }
+}
+
+@Composable
+fun HomeScreen(navController: NavController) {
+    Button(onClick = { navController.navigate("details") }) {
+        Text("Go to Details")
+    }
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "rememberNavController",
+                        description: "Creates and remembers a NavController",
+                        modifiers: [],
+                        innerFunctions: [],
+                        parameters: [],
+                        examples: [
+                            {
+                                title: "Creating NavController",
+                                code: `@Composable
+fun NavigationExample() {
+    val navController = rememberNavController()
+    // Use with NavHost
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "composable",
+                        description: "Adds a composable to the navigation graph",
+                        modifiers: ["route", "arguments", "deepLinks"],
+                        innerFunctions: [],
+                        parameters: [
+                            {
+                                name: "route",
+                                type: "String",
+                                defaultValue: "",
+                                description: "The route for this destination"
+                            },
+                            {
+                                name: "arguments",
+                                type: "List<NamedNavArgument>",
+                                defaultValue: "emptyList()",
+                                description: "The arguments that should be parsed from this destination's route"
+                            },
+                            {
+                                name: "deepLinks",
+                                type: "List<NavDeepLink>",
+                                defaultValue: "emptyList()",
+                                description: "The deep links that should be associated with this destination"
+                            },
+                            {
+                                name: "content",
+                                type: "@Composable (NavBackStackEntry) -> Unit",
+                                defaultValue: "",
+                                description: "The composable content for this destination"
+                            }
+                        ],
+                        examples: [
+                            {
+                                title: "Composable with Arguments",
+                                code: `composable(
+    "user/{userId}",
+    arguments = listOf(navArgument("userId") { type = NavType.StringType })
+) { backStackEntry ->
+    val userId = backStackEntry.arguments?.getString("userId")
+    UserProfile(userId)
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "navigate",
+                        description: "Navigate to a destination in the navigation graph",
+                        modifiers: ["route", "options"],
+                        innerFunctions: [],
+                        parameters: [
+                            {
+                                name: "route",
+                                type: "String",
+                                defaultValue: "",
+                                description: "Route for the destination"
+                            },
+                            {
+                                name: "options",
+                                type: "NavOptions?",
+                                defaultValue: "null",
+                                description: "Additional navigation options"
+                            }
+                        ],
+                        classes: ["NavOptions"],
+                        examples: [
+                            {
+                                title: "Navigation with Options",
+                                code: `navController.navigate(
+    "details",
+    NavOptions.Builder()
+        .setLaunchSingleTop(true)
+        .setPopUpTo("home") { saveState = true }
+        .build()
+)`
+                            }
+                        ]
+                    }
+                ],
+                classes: ["NavHostController", "NavGraphBuilder", "NavOptions"],
+                properties: ["NavType"],
+                annotations: ["@Composable"]
+            },
+            "UI": {
+                description: "Extended UI components and utilities",
+                icon: "fa-layer-group",
+                functions: [
+                    {
+                        name: "Canvas",
+                        description: "Provides a drawing area where you can issue drawing commands",
+                        modifiers: ["modifier", "onDraw"],
+                        innerFunctions: ["DrawScope"],
+                        parameters: [
+                            {
+                                name: "modifier",
+                                type: "Modifier",
+                                defaultValue: "Modifier",
+                                description: "The modifier to be applied to the Canvas"
+                            },
+                            {
+                                name: "onDraw",
+                                type: "DrawScope.() -> Unit",
+                                defaultValue: "",
+                                description: "The drawing commands to issue on the Canvas"
+                            }
+                        ],
+                        classes: ["DrawScope"],
+                        examples: [
+                            {
+                                title: "Drawing on Canvas",
+                                code: `@Composable
+fun CanvasExample() {
+    Canvas(modifier = Modifier.size(100.dp)) {
+        drawCircle(
+            color = Color.Blue,
+            radius = size.minDimension / 2
+        )
+    }
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "LazyColumn",
+                        description: "A vertically scrolling list that only composes and lays out visible items",
+                        modifiers: ["modifier", "contentPadding", "verticalArrangement"],
+                        innerFunctions: ["LazyListScope"],
+                        parameters: [
+                            {
+                                name: "modifier",
+                                type: "Modifier",
+                                defaultValue: "Modifier",
+                                description: "The modifier to be applied to the LazyColumn"
+                            },
+                            {
+                                name: "contentPadding",
+                                type: "PaddingValues",
+                                defaultValue: "PaddingValues(0.dp)",
+                                description: "The padding around the content of the list"
+                            },
+                            {
+                                name: "verticalArrangement",
+                                type: "Arrangement.Vertical",
+                                defaultValue: "Arrangement.Top",
+                                description: "The vertical arrangement of the list's children"
+                            },
+                            {
+                                name: "content",
+                                type: "LazyListScope.() -> Unit",
+                                defaultValue: "",
+                                description: "The content of the list"
+                            }
+                        ],
+                        classes: ["LazyListScope"],
+                        examples: [
+                            {
+                                title: "Basic LazyColumn",
+                                code: `@Composable
+fun LazyColumnExample() {
+    val items = listOf("A", "B", "C", "D", "E")
+    
+    LazyColumn(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(items) { item ->
+            Text("Item $item", modifier = Modifier.padding(8.dp))
+        }
+    }
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "LazyRow",
+                        description: "A horizontally scrolling list that only composes and lays out visible items",
+                        modifiers: ["modifier", "contentPadding", "horizontalArrangement"],
+                        innerFunctions: ["LazyListScope"],
+                        parameters: [
+                            {
+                                name: "modifier",
+                                type: "Modifier",
+                                defaultValue: "Modifier",
+                                description: "The modifier to be applied to the LazyRow"
+                            },
+                            {
+                                name: "contentPadding",
+                                type: "PaddingValues",
+                                defaultValue: "PaddingValues(0.dp)",
+                                description: "The padding around the content of the list"
+                            },
+                            {
+                                name: "horizontalArrangement",
+                                type: "Arrangement.Horizontal",
+                                defaultValue: "Arrangement.Start",
+                                description: "The horizontal arrangement of the list's children"
+                            },
+                            {
+                                name: "content",
+                                type: "LazyListScope.() -> Unit",
+                                defaultValue: "",
+                                description: "The content of the list"
+                            }
+                        ],
+                        classes: ["LazyListScope"],
+                        examples: [
+                            {
+                                title: "Basic LazyRow",
+                                code: `@Composable
+fun LazyRowExample() {
+    val items = listOf("1", "2", "3", "4", "5")
+    
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(items) { item ->
+            Text("Item $item", modifier = Modifier.padding(8.dp))
+        }
+    }
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "ConstraintLayout",
+                        description: "Positions children according to constraints between them",
+                        modifiers: ["modifier", "constraintSet"],
+                        innerFunctions: ["ConstraintSet", "createRefs"],
+                        parameters: [
+                            {
+                                name: "modifier",
+                                type: "Modifier",
+                                defaultValue: "Modifier",
+                                description: "The modifier to be applied to the ConstraintLayout"
+                            },
+                            {
+                                name: "constraintSet",
+                                type: "ConstraintSet",
+                                defaultValue: "",
+                                description: "The constraints that define the layout"
+                            },
+                            {
+                                name: "content",
+                                type: "@Composable () -> Unit",
+                                defaultValue: "",
+                                description: "The content of the ConstraintLayout"
+                            }
+                        ],
+                        classes: ["ConstraintSet"],
+                        examples: [
+                            {
+                                title: "ConstraintLayout Example",
+                                code: `@Composable
+fun ConstraintLayoutExample() {
+    ConstraintLayout(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        val (button, text) = createRefs()
+        
+        Button(
+            onClick = { /* Handle click */ },
+            modifier = Modifier.constrainAs(button) {
+                top.linkTo(parent.top)
+                start.linkTo(parent.start)
+            }
+        ) {
+            Text("Button")
+        }
+        
+        Text(
+            "Hello ConstraintLayout",
+            modifier = Modifier.constrainAs(text) {
+                top.linkTo(button.bottom)
+                start.linkTo(parent.start)
+            }
+        )
+    }
+}`
+                            }
+                        ]
+                    }
+                ],
+                classes: ["DrawScope", "LazyListScope", "ConstraintSet"],
+                properties: ["Modifier"],
+                annotations: ["@Composable"]
+            },
+            "Material 3": {
+                description: "Material Design 3 components for modern Android apps",
+                icon: "fa-palette",
+                functions: [
+                    {
+                        name: "Button",
+                        description: "Material 3 button with updated styling",
+                        modifiers: ["modifier", "onClick", "enabled", "elevation"],
+                        innerFunctions: ["ButtonColors", "ButtonElevation"],
+                        parameters: [
+                            {
+                                name: "onClick",
+                                type: "() -> Unit",
+                                defaultValue: "",
+                                description: "The callback to be invoked when the button is clicked"
+                            },
+                            {
+                                name: "modifier",
+                                type: "Modifier",
+                                defaultValue: "Modifier",
+                                description: "The modifier to be applied to the Button"
+                            },
+                            {
+                                name: "enabled",
+                                type: "Boolean",
+                                defaultValue: "true",
+                                description: "Whether the button is enabled and can be clicked"
+                            },
+                            {
+                                name: "elevation",
+                                type: "ButtonElevation?",
+                                defaultValue: "null",
+                                description: "The elevation of the button in its different states"
+                            },
+                            {
+                                name: "shape",
+                                type: "Shape",
+                                defaultValue: "MaterialTheme.shapes.medium",
+                                description: "The shape of the button"
+                            },
+                            {
+                                name: "content",
+                                type: "@Composable RowScope.() -> Unit",
+                                defaultValue: "",
+                                description: "The content of the Button"
+                            }
+                        ],
+                        classes: ["ButtonColors", "ButtonElevation"],
+                        examples: [
+                            {
+                                title: "Material 3 Button",
+                                code: `@Composable
+fun M3ButtonExample() {
+    Button(
+        onClick = { /* Handle click */ },
+        modifier = Modifier.padding(16.dp),
+        shape = MaterialTheme.shapes.extraLarge
+    ) {
+        Text("M3 Button")
+    }
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "FilledTonalButton",
+                        description: "A secondary button with less emphasis than a regular button",
+                        modifiers: ["modifier", "onClick", "enabled", "elevation"],
+                        innerFunctions: ["ButtonColors", "ButtonElevation"],
+                        parameters: [
+                            {
+                                name: "onClick",
+                                type: "() -> Unit",
+                                defaultValue: "",
+                                description: "The callback to be invoked when the button is clicked"
+                            },
+                            {
+                                name: "modifier",
+                                type: "Modifier",
+                                defaultValue: "Modifier",
+                                description: "The modifier to be applied to the Button"
+                            },
+                            {
+                                name: "enabled",
+                                type: "Boolean",
+                                defaultValue: "true",
+                                description: "Whether the button is enabled and can be clicked"
+                            },
+                            {
+                                name: "elevation",
+                                type: "ButtonElevation?",
+                                defaultValue: "null",
+                                description: "The elevation of the button in its different states"
+                            },
+                            {
+                                name: "shape",
+                                type: "Shape",
+                                defaultValue: "MaterialTheme.shapes.medium",
+                                description: "The shape of the button"
+                            },
+                            {
+                                name: "content",
+                                type: "@Composable RowScope.() -> Unit",
+                                defaultValue: "",
+                                description: "The content of the Button"
+                            }
+                        ],
+                        examples: [
+                            {
+                                title: "Filled Tonal Button",
+                                code: `@Composable
+fun FilledTonalButtonExample() {
+    FilledTonalButton(
+        onClick = { /* Handle click */ },
+        modifier = Modifier.padding(16.dp)
+    ) {
+        Text("Secondary Action")
+    }
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "OutlinedButton",
+                        description: "A button with an outlined border and transparent background",
+                        modifiers: ["modifier", "onClick", "enabled", "elevation"],
+                        innerFunctions: ["ButtonColors", "ButtonElevation"],
+                        parameters: [
+                            {
+                                name: "onClick",
+                                type: "() -> Unit",
+                                defaultValue: "",
+                                description: "The callback to be invoked when the button is clicked"
+                            },
+                            {
+                                name: "modifier",
+                                type: "Modifier",
+                                defaultValue: "Modifier",
+                                description: "The modifier to be applied to the Button"
+                            },
+                            {
+                                name: "enabled",
+                                type: "Boolean",
+                                defaultValue: "true",
+                                description: "Whether the button is enabled and can be clicked"
+                            },
+                            {
+                                name: "elevation",
+                                type: "ButtonElevation?",
+                                defaultValue: "null",
+                                description: "The elevation of the button in its different states"
+                            },
+                            {
+                                name: "shape",
+                                type: "Shape",
+                                defaultValue: "MaterialTheme.shapes.medium",
+                                description: "The shape of the button"
+                            },
+                            {
+                                name: "content",
+                                type: "@Composable RowScope.() -> Unit",
+                                defaultValue: "",
+                                description: "The content of the Button"
+                            }
+                        ],
+                        examples: [
+                            {
+                                title: "Outlined Button",
+                                code: `@Composable
+fun OutlinedButtonExample() {
+    OutlinedButton(
+        onClick = { /* Handle click */ },
+        modifier = Modifier.padding(16.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+    ) {
+        Text("Outlined")
+    }
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "TextButton",
+                        description: "A low emphasis button with no container, just text",
+                        modifiers: ["modifier", "onClick", "enabled"],
+                        innerFunctions: ["ButtonColors"],
+                        parameters: [
+                            {
+                                name: "onClick",
+                                type: "() -> Unit",
+                                defaultValue: "",
+                                description: "The callback to be invoked when the button is clicked"
+                            },
+                            {
+                                name: "modifier",
+                                type: "Modifier",
+                                defaultValue: "Modifier",
+                                description: "The modifier to be applied to the Button"
+                            },
+                            {
+                                name: "enabled",
+                                type: "Boolean",
+                                defaultValue: "true",
+                                description: "Whether the button is enabled and can be clicked"
+                            },
+                            {
+                                name: "content",
+                                type: "@Composable RowScope.() -> Unit",
+                                defaultValue: "",
+                                description: "The content of the Button"
+                            }
+                        ],
+                        examples: [
+                            {
+                                title: "Text Button",
+                                code: `@Composable
+fun TextButtonExample() {
+    TextButton(
+        onClick = { /* Handle click */ },
+        modifier = Modifier.padding(16.dp)
+    ) {
+        Text("Text Button")
+    }
+}`
+                            }
+                        ]
+                    }
+                ],
+                classes: ["ButtonColors", "ButtonElevation"],
+                properties: ["MaterialTheme.colorScheme"],
+                annotations: ["@Composable"]
+            },
+            "Graphics": {
+                description: "Graphics and drawing APIs for custom UI elements",
+                icon: "fa-paint-brush",
+                functions: [
+                    {
+                        name: "drawArc",
+                        description: "Draws an arc between two angles on an oval",
+                        modifiers: ["color", "alpha", "style", "blendMode"],
+                        innerFunctions: [],
+                        parameters: [
+                            {
+                                name: "color",
+                                type: "Color",
+                                defaultValue: "",
+                                description: "The color to draw the arc with"
+                            },
+                            {
+                                name: "startAngle",
+                                type: "Float",
+                                defaultValue: "",
+                                description: "The starting angle in degrees (0 is at 3 o'clock)"
+                            },
+                            {
+                                name: "sweepAngle",
+                                type: "Float",
+                                defaultValue: "",
+                                description: "The sweep angle in degrees (positive is clockwise)"
+                            },
+                            {
+                                name: "useCenter",
+                                type: "Boolean",
+                                defaultValue: "",
+                                description: "Whether to connect the arc to the center"
+                            },
+                            {
+                                name: "style",
+                                type: "DrawStyle",
+                                defaultValue: "Fill",
+                                description: "Whether to fill or stroke the arc"
+                            }
+                        ],
+                        examples: [
+                            {
+                                title: "Drawing an Arc",
+                                code: `@Composable
+fun ArcExample() {
+    Canvas(modifier = Modifier.size(100.dp)) {
+        drawArc(
+            color = Color.Red,
+            startAngle = 0f,
+            sweepAngle = 90f,
+            useCenter = true
+        )
+    }
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "drawCircle",
+                        description: "Draws a circle centered at the given position",
+                        modifiers: ["color", "alpha", "style", "blendMode"],
+                        innerFunctions: [],
+                        parameters: [
+                            {
+                                name: "color",
+                                type: "Color",
+                                defaultValue: "",
+                                description: "The color to draw the circle with"
+                            },
+                            {
+                                name: "radius",
+                                type: "Float",
+                                defaultValue: "",
+                                description: "The radius of the circle in pixels"
+                            },
+                            {
+                                name: "center",
+                                type: "Offset",
+                                defaultValue: "center",
+                                description: "The center of the circle"
+                            },
+                            {
+                                name: "style",
+                                type: "DrawStyle",
+                                defaultValue: "Fill",
+                                description: "Whether to fill or stroke the circle"
+                            }
+                        ],
+                        examples: [
+                            {
+                                title: "Drawing a Circle",
+                                code: `@Composable
+fun CircleExample() {
+    Canvas(modifier = Modifier.size(100.dp)) {
+        drawCircle(
+            color = Color.Blue,
+            radius = size.minDimension / 2
+        )
+    }
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "drawImage",
+                        description: "Draws an image into the canvas",
+                        modifiers: ["alpha", "colorFilter", "blendMode"],
+                        innerFunctions: [],
+                        parameters: [
+                            {
+                                name: "image",
+                                type: "ImageBitmap",
+                                defaultValue: "",
+                                description: "The image to draw"
+                            },
+                            {
+                                name: "dstOffset",
+                                type: "Offset",
+                                defaultValue: "Offset.Zero",
+                                description: "The offset to draw the image at"
+                            },
+                            {
+                                name: "dstSize",
+                                type: "Size",
+                                defaultValue: "image.size",
+                                description: "The size to draw the image"
+                            }
+                        ],
+                        examples: [
+                            {
+                                title: "Drawing an Image",
+                                code: `@Composable
+fun ImageExample() {
+    val imageBitmap = ImageBitmap.imageResource(R.drawable.my_image)
+    
+    Canvas(modifier = Modifier.size(200.dp)) {
+        drawImage(imageBitmap)
+    }
+}`
+                            }
+                        ]
+                    },
+                    {
+                        name: "drawLine",
+                        description: "Draws a line between two points",
+                        modifiers: ["color", "alpha", "blendMode"],
+                        innerFunctions: [],
+                        parameters: [
+                            {
+                                name: "color",
+                                type: "Color",
+                                defaultValue: "",
+                                description: "The color to draw the line with"
+                            },
+                            {
+                                name: "start",
+                                type: "Offset",
+                                defaultValue: "",
+                                description: "The start point of the line"
+                            },
+                            {
+                                name: "end",
+                                type: "Offset",
+                                defaultValue: "",
+                                description: "The end point of the line"
+                            },
+                            {
+                                name: "strokeWidth",
+                                type: "Float",
+                                defaultValue: "1f",
+                                description: "The width of the line in pixels"
+                            }
+                        ],
+                        examples: [
+                            {
+                                title: "Drawing a Line",
+                                code: `@Composable
+fun LineExample() {
+    Canvas(modifier = Modifier.size(100.dp)) {
+        drawLine(
+            color = Color.Green,
+            start = Offset(0f, 0f),
+            end = Offset(size.width, size.height),
+            strokeWidth = 5f
+        )
+    }
+}`
+                            }
+                        ]
+                    }
+                ],
+                classes: ["ImageBitmap", "DrawStyle"],
+                properties: ["Offset", "Size"],
+                annotations: ["@Composable"]
+            }
+        };
+
+        // Create particles animation
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Random size between 2px and 6px
+                const size = Math.random() * 4 + 2;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // Random position
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.bottom = `-${size}px`;
+                
+                // Random animation duration and delay
+                const duration = Math.random() * 10 + 10;
+                const delay = Math.random() * 15;
+                particle.style.animationDuration = `${duration}s`;
+                particle.style.animationDelay = `${delay}s`;
+                
+                // Random color variation
+                const colors = ['#4285F4', '#34A853', '#EA4335', '#FBBC05'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.background = color;
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Render libraries grid
+        function renderLibraries() {
+            const librariesGrid = document.getElementById('librariesGrid');
+            librariesGrid.innerHTML = '';
+            
+            Object.entries(composeData).forEach(([libraryName, libraryData]) => {
+                const libraryCard = document.createElement('div');
+                libraryCard.className = 'library-card';
+                libraryCard.dataset.library = libraryName;
+                
+                libraryCard.innerHTML = `
+                    <div class="library-name">
+                        <i class="fas ${libraryData.icon || 'fa-cube'}"></i>
+                        ${libraryName}
+                    </div>
+                    <p class="library-description">${libraryData.description}</p>
+                    <div class="library-stats">
+                        <div class="stat">
+                            <i class="fas fa-functions"></i>
+                            ${libraryData.functions.length} functions
+                        </div>
+                        <div class="stat">
+                            <i class="fas fa-code"></i>
+                            ${libraryData.functions.reduce((acc, fn) => acc + (fn.modifiers?.length || 0), 0)} modifiers
+                        </div>
+                    </div>
+                `;
+                
+                librariesGrid.appendChild(libraryCard);
+            });
+            
+            // Add click event to library cards
+            document.querySelectorAll('.library-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const libraryName = card.dataset.library;
+                    showLibraryPage(libraryName);
+                });
+            });
+        }
+
+        // Create library page
+        function createLibraryPage(libraryName) {
+            const libraryData = composeData[libraryName];
+            if (!libraryData) return;
+            
+            const pageId = `library-page-${libraryName.toLowerCase()}`;
+            
+            // Check if page already exists
+            if (document.getElementById(pageId)) return;
+            
+            const libraryPage = document.createElement('div');
+            libraryPage.className = 'library-page';
+            libraryPage.id = pageId;
+            
+            libraryPage.innerHTML = `
+                <button class="back-button" onclick="hideLibraryPage('${libraryName}')">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Libraries
+                </button>
+                
+                <div class="library-header">
+                    <h2 class="library-title">${libraryName}</h2>
+                    <div class="library-stats">
+                        <div class="stat">
+                            <i class="fas fa-functions"></i>
+                            ${libraryData.functions.length} functions
+                        </div>
+                    </div>
+                </div>
+                
+                <p class="library-description">${libraryData.description}</p>
+                
+                <h3 class="section-title">Functions</h3>
+                <div class="functions-list" id="functions-list-${libraryName.toLowerCase()}"></div>
+                
+                ${libraryData.classes && libraryData.classes.length > 0 ? `
+                    <h3 class="section-title">Classes/Interfaces</h3>
+                    <div class="classes-list">
+                        ${libraryData.classes.map(cls => `<span class="class-item">${cls}</span>`).join('')}
+                    </div>
+                ` : ''}
+                
+                ${libraryData.properties && libraryData.properties.length > 0 ? `
+                    <h3 class="section-title">Properties/Constants</h3>
+                    <div class="properties-list">
+                        ${libraryData.properties.map(prop => `<span class="property">${prop}</span>`).join('')}
+                    </div>
+                ` : ''}
+                
+                ${libraryData.annotations && libraryData.annotations.length > 0 ? `
+                    <h3 class="section-title">Annotations</h3>
+                    <div class="annotations-list">
+                        ${libraryData.annotations.map(ann => `<span class="annotation">${ann}</span>`).join('')}
+                    </div>
+                ` : ''}
+            `;
+            
+            document.getElementById('libraryPagesContainer').appendChild(libraryPage);
+            
+            // Render functions
+            const functionsList = document.getElementById(`functions-list-${libraryName.toLowerCase()}`);
+            libraryData.functions.forEach(func => {
+                const functionCard = document.createElement('div');
+                functionCard.className = 'function-card';
+                
+                functionCard.innerHTML = `
+                    <div class="function-name">${func.name}</div>
+                    <p class="function-description">${func.description}</p>
+                    
+                    ${func.parameters && func.parameters.length > 0 ? `
+                        <div class="function-details">
+                            <div class="detail-title">Parameters</div>
+                            <table class="parameters-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Type</th>
+                                        <th>Default</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${func.parameters.map(param => `
+                                        <tr>
+                                            <td class="parameter-name">${param.name}</td>
+                                            <td class="parameter-type-cell">${param.type}</td>
+                                            <td class="parameter-default-cell">${param.defaultValue || 'none'}</td>
+                                            <td class="parameter-description">${param.description}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    ` : ''}
+                    
+                    ${func.modifiers && func.modifiers.length > 0 ? `
+                        <div class="function-details">
+                            <div class="detail-title">Modifiers</div>
+                            <div class="modifiers-list">
+                                ${func.modifiers.map(mod => `<span class="modifier">${mod}</span>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    ${func.innerFunctions && func.innerFunctions.length > 0 ? `
+                        <div class="function-details">
+                            <div class="detail-title">Inner Functions/Scopes</div>
+                            <div class="inner-functions-list">
+                                ${func.innerFunctions.map(fn => `<span class="inner-function">${fn}</span>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    ${func.examples && func.examples.length > 0 ? `
+                        <div class="example-section">
+                            <div class="example-title">
+                                <i class="fas fa-code"></i>
+                                Examples
+                            </div>
+                            ${func.examples.map(example => `
+                                <div style="margin-bottom: 1rem;">
+                                    <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                                        ${example.title}
+                                    </div>
+                                    <div class="example-code">${example.code}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                `;
+                
+                functionsList.appendChild(functionCard);
+            });
+        }
+
+        // Show library page
+        function showLibraryPage(libraryName) {
+            createLibraryPage(libraryName);
+            
+            const pageId = `library-page-${libraryName.toLowerCase()}`;
+            const page = document.getElementById(pageId);
+            
+            // Hide all pages first
+            document.querySelectorAll('.library-page').forEach(p => {
+                p.classList.remove('active');
+            });
+            
+            // Show selected page
+            setTimeout(() => {
+                page.classList.add('active');
+                // Scroll to top
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 10);
+        }
+
+        // Hide library page
+        function hideLibraryPage(libraryName) {
+            const pageId = `library-page-${libraryName.toLowerCase()}`;
+            const page = document.getElementById(pageId);
+            
+            if (page) {
+                page.classList.remove('active');
+                setTimeout(() => {
+                    // Scroll to libraries grid
+                    document.querySelector('.container').scrollIntoView({ behavior: 'smooth' });
+                }, 300);
+            }
+        }
+
+        // Search functionality
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                
+                if (searchTerm.length === 0) {
+                    // Show all libraries
+                    document.querySelectorAll('.library-card').forEach(card => {
+                        card.style.display = 'block';
+                    });
+                    return;
+                }
+                
+                // Search in libraries, functions, and parameters
+                document.querySelectorAll('.library-card').forEach(card => {
+                    const libraryName = card.dataset.library.toLowerCase();
+                    const libraryData = composeData[card.dataset.library];
+                    
+                    // Check if library name matches
+                    if (libraryName.includes(searchTerm)) {
+                        card.style.display = 'block';
+                        return;
+                    }
+                    
+                    // Check if any function in this library matches
+                    const hasMatchingFunction = libraryData.functions.some(func => {
+                        // Check function name or description
+                        if (func.name.toLowerCase().includes(searchTerm) || 
+                            func.description.toLowerCase().includes(searchTerm)) {
+                            return true;
+                        }
+                        
+                        // Check modifiers
+                        if (func.modifiers && func.modifiers.some(mod => mod.toLowerCase().includes(searchTerm))) {
+                            return true;
+                        }
+                        
+                        // Check inner functions
+                        if (func.innerFunctions && func.innerFunctions.some(fn => fn.toLowerCase().includes(searchTerm))) {
+                            return true;
+                        }
+                        
+                        // Check parameters
+                        if (func.parameters && func.parameters.some(param => 
+                            param.name.toLowerCase().includes(searchTerm) || 
+                            param.type.toLowerCase().includes(searchTerm) ||
+                            param.description.toLowerCase().includes(searchTerm))) {
+                            return true;
+                        }
+                        
+                        return false;
+                    });
+                    
+                    // Check classes
+                    const hasMatchingClass = libraryData.classes && 
+                        libraryData.classes.some(cls => cls.toLowerCase().includes(searchTerm));
+                    
+                    // Check properties
+                    const hasMatchingProperty = libraryData.properties && 
+                        libraryData.properties.some(prop => prop.toLowerCase().includes(searchTerm));
+                    
+                    // Check annotations
+                    const hasMatchingAnnotation = libraryData.annotations && 
+                        libraryData.annotations.some(ann => ann.toLowerCase().includes(searchTerm));
+                    
+                    card.style.display = (hasMatchingFunction || hasMatchingClass || 
+                                        hasMatchingProperty || hasMatchingAnnotation) ? 'block' : 'none';
+                });
+            });
+        }
+
+        // Scroll to top button
+        function setupScrollToTop() {
+            const scrollToTopBtn = document.getElementById('scrollToTop');
+            
+            window.addEventListener('scroll', () => {
+                if (window.pageYOffset > 300) {
+                    scrollToTopBtn.style.opacity = '1';
+                    scrollToTopBtn.style.visibility = 'visible';
+                } else {
+                    scrollToTopBtn.style.opacity = '0';
+                    scrollToTopBtn.style.visibility = 'hidden';
+                }
+            });
+            
+            scrollToTopBtn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            renderLibraries();
+            setupSearch();
+            setupScrollToTop();
+            
+            // Make functions available in global scope
+            window.showLibraryPage = showLibraryPage;
+            window.hideLibraryPage = hideLibraryPage;
+        });
+    </script>
+</body>
+</html>
